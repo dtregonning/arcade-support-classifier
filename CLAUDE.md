@@ -855,7 +855,7 @@ data/hero_ticket.json
 
 Scenario:
 
-Enterprise customer Meridian.
+Enterprise customer Acme.
 
 Approximately one third of users cannot send Gmail messages.
 
@@ -928,7 +928,7 @@ SUPPORT AUTOMATION DEMO
 
 Ticket
 ------
-Meridian Financial
+Acme Financial
 Gmail.SendEmail failures
 Impact: ~33% users
 
@@ -1020,7 +1020,7 @@ unrelated recent changes do not become root causes
 
 Hero scenario
 
-The Meridian ticket MUST:
+The Acme ticket MUST:
 
 detect gmail.compose mismatch
 

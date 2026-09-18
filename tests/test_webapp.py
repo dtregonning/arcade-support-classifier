@@ -19,7 +19,7 @@ def test_samples_endpoint_includes_hero_ticket():
     response = client.get("/api/samples")
     assert response.status_code == 200
     ticket_ids = [t["ticket_id"] for t in response.json()]
-    assert "TICK-MERIDIAN-001" in ticket_ids
+    assert "TICK-ACME-001" in ticket_ids
 
 
 def test_classify_generates_ticket_id_when_omitted():

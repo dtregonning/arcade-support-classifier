@@ -1,7 +1,7 @@
 {
-  "ticket_id": "TICK-MERIDIAN-001",
-  "customer_id": "CUST-MERIDIAN",
-  "customer_name": "Meridian Financial",
+  "ticket_id": "TICK-ACME-001",
+  "customer_id": "CUST-ACME",
+  "customer_name": "Acme Financial",
   "customer_tier": "enterprise",
   "subject": "Gmail send failing for roughly a third of users",
   "description": "Approximately one third of our users can no longer send Gmail through our AI agent. Our AI team believes Arcade is losing tokens.",
@@ -28,7 +28,7 @@
   ],
   "customer_hypothesis": "Arcade is losing tokens",
   "metadata": {
-    "scenario": "hero_meridian",
+    "scenario": "hero_acme",
     "google_account_connected": "approximately one month ago"
   }
 }

@@ -39,7 +39,7 @@ confidently on a ticket that doesn't support confidence.
 
 ---
 
-## 2. The hero ticket (Meridian — Gmail OAuth scope mismatch)
+## 2. The hero ticket (Acme — Gmail OAuth scope mismatch)
 
 ```bash
 uv run support-demo data/hero_ticket.json
@@ -195,7 +195,7 @@ uv run support-portal
 
 Open http://127.0.0.1:8000, load the hero ticket from the picker, and
 click **Classify ticket**. This is the "mock customer portal" framing:
-imagine Meridian's own support contact filling this form in, hitting
+imagine Acme's own support contact filling this form in, hitting
 submit, and everything downstream happening without anyone touching a
 CLI or an agent.
 

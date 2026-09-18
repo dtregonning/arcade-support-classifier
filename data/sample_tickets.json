@@ -246,7 +246,7 @@
   {
     "ticket_id": "TICK-90001",
     "customer_id": "CUST-90001",
-    "customer_name": "Bramblewood Logistics",
+    "customer_name": "Acme Logistics",
     "customer_tier": "business",
     "subject": "Spike in HTTP 500 errors from order API",
     "description": "Order submissions are failing intermittently with server errors during business hours.",
@@ -278,7 +278,7 @@
   {
     "ticket_id": "TICK-90002",
     "customer_id": "CUST-90002",
-    "customer_name": "Hollow Peak Retail",
+    "customer_name": "Acme Retail",
     "customer_tier": "business",
     "subject": "Webhook integration not receiving events",
     "description": "Customer configured their webhook URL with a typo in the domain, so events are never delivered.",
@@ -291,7 +291,7 @@
     "error_messages": [
       "delivery failed: DNS resolution error for endpoint"
     ],
-    "logs": "webhook_url=https://hoollowpeak.example/hook status=dns_error attempts=12",
+    "logs": "webhook_url=https://acmerettail.example/hook status=dns_error attempts=12",
     "reproduction_steps": [
       "Trigger an event",
       "Observe repeated DNS resolution failures"
@@ -331,7 +331,7 @@
   {
     "ticket_id": "TICK-90004",
     "customer_id": "CUST-90004",
-    "customer_name": "Fairhaven Analytics",
+    "customer_name": "Acme Analytics",
     "customer_tier": "enterprise",
     "subject": "Your servers are down",
     "description": "Customer reports total outage. Evidence shows an OAuth authorization failure, not a server outage.",
