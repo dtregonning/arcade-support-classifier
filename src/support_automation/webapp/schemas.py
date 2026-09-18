@@ -13,6 +13,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 from support_automation.models.enrichment import TicketEnrichment
+from support_automation.models.execution import ExecutionResult
 from support_automation.models.routing import (
     ActionRecommendation,
     RoutingResult,
@@ -58,3 +59,4 @@ class ClassificationResult(BaseModel):
     severity: SeverityAssessment
     routing: RoutingResult
     recommendation: ActionRecommendation
+    executions: list[ExecutionResult] = Field(default_factory=list)

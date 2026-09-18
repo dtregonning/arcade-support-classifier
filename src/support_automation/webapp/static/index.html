@@ -161,6 +161,20 @@
     margin-bottom: 6px;
   }
   .quote { font-style: italic; color: var(--muted); }
+  .exec-row {
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12.5px;
+  }
+  .exec-row:last-child { border-bottom: none; }
+  .exec-row .name { font-family: var(--mono); }
+  .exec-row .status { font-weight: 600; margin-left: 6px; }
+  .exec-row .status.executed { color: var(--ok); }
+  .exec-row .status.skipped { color: var(--muted); }
+  .exec-row .status.needs_authorization { color: var(--warn); }
+  .exec-row .status.failed { color: var(--danger); }
+  .exec-row .detail { color: var(--muted); margin-top: 2px; word-break: break-all; }
+  .exec-row .detail a { color: var(--accent); }
   #error-banner {
     display: none;
     background: color-mix(in srgb, var(--danger) 15%, transparent);
@@ -177,7 +191,7 @@
 
 <header>
   <h1>Support Automation Portal</h1>
-  <p>Submit a ticket to run it through validation, enrichment, severity assessment, routing, and recommended actions — the same deterministic pipeline behind <code>support-demo</code>.</p>
+  <p>Submit a ticket to run it through validation, enrichment, severity assessment, routing, and recommended actions — the same deterministic pipeline behind <code>support-demo</code>. AUTO-tier actions (create a Linear issue, notify Slack) then run for real via Arcade, if configured.</p>
 </header>
 
 <main>
@@ -460,6 +474,35 @@ function render(data) {
     ])
   );
   resultEl.appendChild(section("Rejected actions", rejectedChildren.length ? rejectedChildren : [el("div", { className: "quote", text: "none" })]));
+
+  const executions = data.executions || [];
+  const EXEC_LABEL = {
+    executed: "EXECUTED",
+    skipped: "SKIPPED",
+    needs_authorization: "NEEDS AUTHORIZATION",
+    failed: "FAILED",
+  };
+  const execChildren = executions.map((e) => {
+    const detailNode = /^https?:\/\//.test(e.detail)
+      ? el("a", { text: e.detail }, [])
+      : el("span", { text: e.detail });
+    if (detailNode.tagName === "A") {
+      detailNode.href = e.detail;
+      detailNode.target = "_blank";
+      detailNode.rel = "noopener noreferrer";
+    }
+    return el("div", { className: "exec-row" }, [
+      el("span", { className: "name", text: e.action }),
+      el("span", { className: `status ${e.status}`, text: EXEC_LABEL[e.status] || e.status }),
+      el("div", { className: "detail" }, [detailNode]),
+    ]);
+  });
+  resultEl.appendChild(
+    section(
+      "Automation (Linear / Slack)",
+      execChildren.length ? execChildren : [el("div", { className: "quote", text: "none" })]
+    )
+  );
 
   emptyEl.hidden = true;
   resultEl.hidden = false;

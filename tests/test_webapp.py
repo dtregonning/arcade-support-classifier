@@ -32,6 +32,19 @@ def test_classify_generates_ticket_id_when_omitted():
     assert body["ticket"]["ticket_id"].startswith("TICK-")
 
 
+def test_classify_reports_executions_skipped_without_arcade_configured(monkeypatch):
+    monkeypatch.delenv("ARCADE_API_KEY", raising=False)
+    response = client.post(
+        "/api/tickets/classify",
+        json={"description": "Something is broken", "customer_id": "C-1"},
+    )
+    assert response.status_code == 200
+    executions = response.json()["executions"]
+    statuses = {e["action"] for e in executions}
+    assert statuses == {"create_linear_issue", "notify_support_channel"}
+    assert all(e["status"] == "skipped" for e in executions)
+
+
 def test_classify_hero_ticket_matches_cli_pipeline():
     hero = json.loads((_REPO_ROOT / "data" / "hero_ticket.json").read_text())
     payload = {k: v for k, v in hero.items() if k != "metadata"}

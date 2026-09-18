@@ -79,10 +79,11 @@ misleading customer hypothesis, and the Arcade/Slack/Linear flow — see
 
 ## Web Portal
 
-A minimal web front end for submitting a ticket and seeing it run through
-the same pipeline as the CLI — no database, no auth, nothing persisted
-server-side; a ticket is classified on submit and the result is returned
-straight to the browser.
+A mock customer support portal: submit a ticket and watch it run through
+the same pipeline as the CLI, then — if Arcade is configured — watch the
+AUTO-tier recommended actions actually execute against real Linear and
+Slack. No database, no auth; nothing about the ticket itself is persisted
+server-side.
 
 ```bash
 uv run support-portal
@@ -91,11 +92,50 @@ uv run support-portal
 Then open http://127.0.0.1:8000. Use the "Load an example…" picker to
 prefill the form with the hero ticket or any sample ticket, or fill it in
 by hand, and click **Classify ticket** to see validation, enrichment,
-severity, routing, and recommended/rejected actions rendered live.
+severity, routing, recommended/rejected actions, and (see below) live
+automation results, all rendered on submit.
 
-The portal is a thin FastAPI layer (`src/support_automation/webapp/`) over
-the exact same `services`/`tools` functions the CLI calls — it contains no
-business logic of its own.
+The classification half of the portal is a thin FastAPI layer
+(`src/support_automation/webapp/`) over the exact same `services`/`tools`
+functions the CLI calls — it contains no business logic of its own.
+
+### Live Linear/Slack execution
+
+After classifying, the portal calls
+`support_automation.services.execution.execute_auto_actions`, which runs
+whichever of the recommendation's actions are both in
+`{create_linear_issue, notify_support_channel}` **and** marked
+`execution="automatic"` — nothing else, and nothing not already
+AUTO-tier. It talks to Arcade directly via the `arcadepy` SDK (Arcade's
+tool-execution API, not the MCP gateway), so the portal itself never
+holds a raw Slack or Linear token — only an `ARCADE_API_KEY`.
+
+This is entirely optional — see `.env.example`:
+
+```bash
+ARCADE_API_KEY=...       # required to execute anything at all
+ARCADE_USER_ID=...       # identifies *you* (support engineering) to Arcade,
+                          # not the customer submitting the ticket
+LINEAR_TEAM=...          # a real Linear team name/key in your workspace
+SLACK_CHANNEL=...        # a real, already-existing Slack channel
+```
+
+Without `ARCADE_API_KEY`, classification still returns the full result —
+the portal just reports `create_linear_issue`/`notify_support_channel` as
+`skipped` rather than raising, so the demo never breaks for lack of
+credentials. With it, each result comes back as one of:
+
+- `executed` — the Linear issue was created / the Slack message was sent;
+  `detail` carries the issue URL or a confirmation
+- `needs_authorization` — `ARCADE_USER_ID` hasn't granted Linear/Slack
+  access yet; `detail` carries a one-time authorization URL to open
+- `skipped` — `LINEAR_TEAM`/`SLACK_CHANNEL` isn't set for that action
+- `failed` — the Arcade call itself failed; `detail` carries the error
+  (e.g. "Team 'X' not found" if `LINEAR_TEAM` doesn't exist)
+
+The Linear issue is created first, and its URL is folded into the Slack
+message, mirroring the manual `Linear.CreateIssue` → `Slack.SendMessage`
+flow described below.
 
 The hero scenario: an enterprise customer (Meridian) reports that a third
 of their users can't send Gmail, and their AI team suspects Arcade is
@@ -176,6 +216,20 @@ ticket → validate_ticket → enrich_ticket → route_ticket → recommend_acti
 Both of those are internal-facing actions from `recommend_actions`'
 AUTO-tier action list — per the Automation Policy below, no customer-facing
 communication is ever sent automatically.
+
+There are now two independent ways to walk this flow:
+- **Agent-orchestrated** (above): an MCP client (Claude Desktop, Claude
+  Code) calls the five tools itself, then decides to call
+  `Linear.CreateIssue`/`Slack.SendMessage` — the pattern CLAUDE.md
+  specifies, useful when a human or agent is driving interactively.
+- **Portal-orchestrated** (see Web Portal above): the web portal calls
+  Arcade directly and fires the AUTO-tier actions itself, immediately
+  after classifying — useful for the "customer submits a ticket, support
+  engineering's Slack/Linear just... happens" demo, with no agent in the
+  loop at all.
+
+Both paths reach the same two tools through the same Arcade OAuth
+grants; neither ever holds a raw Slack or Linear token.
 
 A few things worth knowing if you redo this setup:
 - Arcade's toolkit catalog indexes a deployed server by a PascalCase

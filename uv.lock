@@ -1597,6 +1597,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "arcade-mcp-server" },
+    { name = "arcadepy" },
     { name = "fastapi" },
     { name = "pydantic" },
     { name = "pyyaml" },
@@ -1614,6 +1615,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "arcade-mcp-server", specifier = ">=1.17.0,<2.0.0" },
+    { name = "arcadepy", specifier = ">=1.8.0,<2.0.0" },
     { name = "fastapi", specifier = ">=0.110" },
     { name = "pydantic", specifier = ">=2.6" },
     { name = "pyyaml", specifier = ">=6.0" },

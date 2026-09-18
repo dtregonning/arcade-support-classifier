@@ -4,6 +4,14 @@ A thin presentation layer over the same deterministic pipeline the CLI
 uses (support_automation.tools / services) — no business logic lives
 here, and no database: a submitted ticket is classified on the spot and
 the result is returned to the browser, nothing is persisted server-side.
+
+After classification, AUTO-tier recommended actions (create_linear_issue,
+notify_support_channel) are executed for real via
+support_automation.services.execution, which talks to Arcade directly.
+This is optional: without ARCADE_API_KEY configured, classification still
+returns the full result — execution is just reported as skipped. See
+CLAUDE.md's Automation Policy: only execution="automatic" actions run,
+and nothing here can execute an APPROVAL_REQUIRED or HUMAN_ONLY action.
 """
 
 from __future__ import annotations
@@ -18,6 +26,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from support_automation.models.ticket import SupportTicket
+from support_automation.services.execution import execute_auto_actions
 from support_automation.services.severity import recommend_severity
 from support_automation.tools.enrich_ticket import enrich_ticket
 from support_automation.tools.recommend_actions import recommend_actions
@@ -60,6 +69,7 @@ def classify_ticket(payload: TicketSubmission) -> ClassificationResult:
     severity = recommend_severity(ticket, enrichment)
     routing = route_ticket(ticket, enrichment)
     recommendation = recommend_actions(ticket, validation, enrichment, severity, routing)
+    executions = execute_auto_actions(ticket, enrichment, severity, routing, recommendation)
 
     return ClassificationResult(
         ticket=ticket,
@@ -68,6 +78,7 @@ def classify_ticket(payload: TicketSubmission) -> ClassificationResult:
         severity=severity,
         routing=routing,
         recommendation=recommendation,
+        executions=executions,
     )
 
 

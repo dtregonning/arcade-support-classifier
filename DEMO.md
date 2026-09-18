@@ -187,6 +187,37 @@ real message.
 
 ---
 
+## 6. The portal, end to end (optional, if Arcade is configured)
+
+```bash
+uv run support-portal
+```
+
+Open http://127.0.0.1:8000, load the hero ticket from the picker, and
+click **Classify ticket**. This is the "mock customer portal" framing:
+imagine Meridian's own support contact filling this form in, hitting
+submit, and everything downstream happening without anyone touching a
+CLI or an agent.
+
+If `ARCADE_API_KEY`, `ARCADE_USER_ID`, `LINEAR_TEAM`, and `SLACK_CHANNEL`
+are set (see `.env.example`), the same classification result you saw in
+step 2 appears instantly, and a new **Automation (Linear / Slack)**
+section shows what happened for real: `create_linear_issue` and
+`notify_support_channel` each report `executed`, with the real Linear
+issue URL as the detail. Open it — it's the same evidence-first writeup
+from step 2, created automatically, with no agent orchestrating the
+call. Without those env vars set, the same section shows both actions as
+`skipped` with a plain explanation why — the classification is
+identical either way, since execution is strictly additive.
+
+Point out what's *not* on this screen: `request_google_reauthorization`
+never appears in the Automation section, because it's APPROVAL_REQUIRED,
+not AUTO. The portal's execution code (`services/execution.py`) has no
+path that can run it — this isn't a UI omission, it's enforced in the
+same module that talks to Arcade.
+
+---
+
 ## Closing point
 
 Three things happened across these runs, and none of them were an LLM
