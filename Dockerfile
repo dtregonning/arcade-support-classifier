@@ -2,7 +2,14 @@
 # Not used for the MCP server -- that's deployed separately via
 # `arcade deploy` (see README's Arcade section), not this image.
 
-FROM python:3.12-slim AS base
+# Pinned to linux/amd64 regardless of the host building it: on Apple
+# Silicon, a plain `docker build` produces an arm64 image that fails on
+# Fargate (the default architecture for ECS/App Runner/etc.) with "exec
+# format error" -- learned this the hard way deploying to ECS Express
+# Mode. Pinning here means every build command in DEPLOY.md and
+# scripts/deploy-ecs-express.sh stays simple and correct without each
+# one needing its own --platform flag.
+FROM --platform=linux/amd64 python:3.12-slim AS base
 
 FROM base AS builder
 COPY --from=ghcr.io/astral-sh/uv:0.9 /uv /uvx /bin/
