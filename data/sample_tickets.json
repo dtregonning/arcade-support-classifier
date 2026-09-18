@@ -1,0 +1,363 @@
+[
+  {
+    "ticket_id": "TICK-09774",
+    "customer_id": "CUST-01396",
+    "customer_name": "Oauth Scope Mismatch Customer",
+    "customer_tier": "enterprise",
+    "subject": "Gmail send failing for subset of users",
+    "description": "Users are intermittently unable to send Gmail messages through the AI agent integration.",
+    "reported_severity": "P1",
+    "affected_users": 340,
+    "total_users": 1000,
+    "product": "AI Agent Platform",
+    "provider": "Google",
+    "environment": "production",
+    "error_messages": [
+      "authorization_required: missing required scope"
+    ],
+    "logs": "tool=Gmail.SendEmail status=authorization_required required_scopes=[gmail.send,gmail.compose] granted_scopes=[gmail.readonly,gmail.send]",
+    "reproduction_steps": [
+      "Connect Google account",
+      "Attempt to send email via agent",
+      "Observe authorization_required error"
+    ],
+    "first_seen_at": "2026-09-13T00:00:00Z",
+    "reported_at": "2026-09-15T00:00:00Z",
+    "recent_changes": [
+      "Google toolkit upgraded v3.1 to v3.4 on Monday"
+    ],
+    "customer_hypothesis": "Arcade is losing tokens",
+    "metadata": {
+      "scenario": "oauth_scope_mismatch"
+    }
+  },
+  {
+    "ticket_id": "TICK-90711",
+    "customer_id": "CUST-41530",
+    "customer_name": "Expired Token Customer",
+    "customer_tier": "enterprise",
+    "subject": "OAuth token expired, integration failing",
+    "description": "Customer integration stopped working after an OAuth token expired.",
+    "reported_severity": "P2",
+    "affected_users": 5,
+    "total_users": 500,
+    "product": "AI Agent Platform",
+    "provider": "Google",
+    "environment": "production",
+    "error_messages": [
+      "invalid_token: token_expired"
+    ],
+    "logs": "tool=Calendar.ListEvents status=unauthorized error=token_expired",
+    "reproduction_steps": [
+      "Call Calendar.ListEvents",
+      "Observe unauthorized error"
+    ],
+    "first_seen_at": "2026-09-14T00:00:00Z",
+    "reported_at": "2026-09-15T00:00:00Z",
+    "recent_changes": [],
+    "customer_hypothesis": "Something broke on your end overnight",
+    "metadata": {
+      "scenario": "expired_token"
+    }
+  },
+  {
+    "ticket_id": "TICK-51304",
+    "customer_id": "CUST-93043",
+    "customer_name": "Kubernetes Crashloop Customer",
+    "customer_tier": "enterprise",
+    "subject": "Worker pods stuck in CrashLoopBackOff",
+    "description": "Background job workers are continuously restarting and failing to process queued jobs.",
+    "reported_severity": "P1",
+    "affected_users": 1000,
+    "total_users": 1000,
+    "product": "Job Processing Service",
+    "provider": null,
+    "environment": "production",
+    "error_messages": [
+      "Back-off restarting failed container",
+      "CrashLoopBackOff"
+    ],
+    "logs": "pod=worker-7f9c status=CrashLoopBackOff restarts=14 reason=Error",
+    "reproduction_steps": [
+      "Deploy worker image v2.9.0",
+      "Observe pod restart loop"
+    ],
+    "first_seen_at": "2026-09-15T00:00:00Z",
+    "reported_at": "2026-09-15T00:00:00Z",
+    "recent_changes": [
+      "Deployed worker image v2.9.0"
+    ],
+    "customer_hypothesis": "Your infrastructure is down",
+    "metadata": {
+      "scenario": "kubernetes_crashloop"
+    }
+  },
+  {
+    "ticket_id": "TICK-82974",
+    "customer_id": "CUST-11853",
+    "customer_name": "Kubernetes Oom Customer",
+    "customer_tier": "enterprise",
+    "subject": "Worker pods being OOMKilled under load",
+    "description": "Pods processing large batch jobs are being killed for exceeding memory limits.",
+    "reported_severity": "P2",
+    "affected_users": 120,
+    "total_users": 1000,
+    "product": "Job Processing Service",
+    "provider": null,
+    "environment": "production",
+    "error_messages": [
+      "OOMKilled",
+      "container exceeded memory limit"
+    ],
+    "logs": "pod=batch-worker-3 status=OOMKilled memory_limit=512Mi",
+    "reproduction_steps": [
+      "Submit large batch job",
+      "Observe pod termination"
+    ],
+    "first_seen_at": "2026-09-12T00:00:00Z",
+    "reported_at": "2026-09-15T00:00:00Z",
+    "recent_changes": [
+      "Increased default batch size from 100 to 500"
+    ],
+    "customer_hypothesis": "Must be a memory leak in your platform",
+    "metadata": {
+      "scenario": "kubernetes_oom"
+    }
+  },
+  {
+    "ticket_id": "TICK-76547",
+    "customer_id": "CUST-96649",
+    "customer_name": "Api Rate Limit Customer",
+    "customer_tier": "enterprise",
+    "subject": "Salesforce sync failing with 429 errors",
+    "description": "Salesforce sync jobs are failing intermittently with rate limit errors.",
+    "reported_severity": "P3",
+    "affected_users": 45,
+    "total_users": 900,
+    "product": "Integration Sync Service",
+    "provider": "Salesforce",
+    "environment": "production",
+    "error_messages": [
+      "HTTP 429 Too Many Requests"
+    ],
+    "logs": "tool=Salesforce.Sync status=429 retry_after=30",
+    "reproduction_steps": [
+      "Trigger sync job",
+      "Observe 429 responses"
+    ],
+    "first_seen_at": "2026-09-14T00:00:00Z",
+    "reported_at": "2026-09-15T00:00:00Z",
+    "recent_changes": [
+      "Increased sync frequency from hourly to every 5 minutes"
+    ],
+    "customer_hypothesis": "Salesforce must be down",
+    "metadata": {
+      "scenario": "api_rate_limit"
+    }
+  },
+  {
+    "ticket_id": "TICK-67799",
+    "customer_id": "CUST-81114",
+    "customer_name": "Network Timeout Customer",
+    "customer_tier": "enterprise",
+    "subject": "Intermittent connection timeouts to integration endpoint",
+    "description": "Requests to the third-party API occasionally time out without a response.",
+    "reported_severity": "P3",
+    "affected_users": 30,
+    "total_users": 800,
+    "product": "Integration Sync Service",
+    "provider": null,
+    "environment": "production",
+    "error_messages": [
+      "connect ETIMEDOUT",
+      "network timeout after 30s"
+    ],
+    "logs": "endpoint=api.partner.example status=timeout duration_ms=30000",
+    "reproduction_steps": [
+      "Call partner API",
+      "Observe timeout after 30s"
+    ],
+    "first_seen_at": "2026-09-11T00:00:00Z",
+    "reported_at": "2026-09-15T00:00:00Z",
+    "recent_changes": [
+      "Partner rotated their API endpoint IP range"
+    ],
+    "customer_hypothesis": "Our network is fine, must be your side",
+    "metadata": {
+      "scenario": "network_timeout"
+    }
+  },
+  {
+    "ticket_id": "TICK-85053",
+    "customer_id": "CUST-40721",
+    "customer_name": "Database Connection Exhaustion Customer",
+    "customer_tier": "enterprise",
+    "subject": "Application errors under peak load",
+    "description": "During peak traffic, requests fail with database errors.",
+    "reported_severity": "P1",
+    "affected_users": 600,
+    "total_users": 1000,
+    "product": "Core Platform",
+    "provider": null,
+    "environment": "production",
+    "error_messages": [
+      "FATAL: remaining connection slots are reserved",
+      "connection pool exhausted"
+    ],
+    "logs": "database=postgres status=error message='too many connections' pool_size=20",
+    "reproduction_steps": [
+      "Generate peak load",
+      "Observe connection errors"
+    ],
+    "first_seen_at": "2026-09-15T00:00:00Z",
+    "reported_at": "2026-09-15T00:00:00Z",
+    "recent_changes": [
+      "Scaled application instances from 4 to 12"
+    ],
+    "customer_hypothesis": "Your database must be down",
+    "metadata": {
+      "scenario": "database_connection_exhaustion"
+    }
+  },
+  {
+    "ticket_id": "TICK-03971",
+    "customer_id": "CUST-57710",
+    "customer_name": null,
+    "customer_tier": "enterprise",
+    "subject": "Occasional slowness reported",
+    "description": "A customer reports vague, intermittent slowness with no clear pattern.",
+    "reported_severity": "P3",
+    "affected_users": null,
+    "total_users": null,
+    "product": "AI Agent Platform",
+    "provider": null,
+    "environment": null,
+    "error_messages": [],
+    "logs": null,
+    "reproduction_steps": [],
+    "first_seen_at": null,
+    "reported_at": "2026-09-15T00:00:00Z",
+    "recent_changes": [],
+    "customer_hypothesis": "Not sure, just feels slower lately",
+    "metadata": {
+      "scenario": "unknown_issue"
+    }
+  },
+  {
+    "ticket_id": "TICK-90001",
+    "customer_id": "CUST-90001",
+    "customer_name": "Bramblewood Logistics",
+    "customer_tier": "business",
+    "subject": "Spike in HTTP 500 errors from order API",
+    "description": "Order submissions are failing intermittently with server errors during business hours.",
+    "reported_severity": "P2",
+    "affected_users": 80,
+    "total_users": 400,
+    "product": "Order Processing Service",
+    "provider": null,
+    "environment": "production",
+    "error_messages": [
+      "HTTP 500 Internal Server Error",
+      "status=500"
+    ],
+    "logs": "endpoint=/api/orders status=500 count=214 window=15m",
+    "reproduction_steps": [
+      "Submit an order during peak hours",
+      "Observe intermittent 500 responses"
+    ],
+    "first_seen_at": "2026-09-14T09:00:00Z",
+    "reported_at": "2026-09-14T09:20:00Z",
+    "recent_changes": [
+      "Deployed order-service v4.2.1"
+    ],
+    "customer_hypothesis": "Your API is broken",
+    "metadata": {
+      "scenario": "http_500_spike"
+    }
+  },
+  {
+    "ticket_id": "TICK-90002",
+    "customer_id": "CUST-90002",
+    "customer_name": "Hollow Peak Retail",
+    "customer_tier": "business",
+    "subject": "Webhook integration not receiving events",
+    "description": "Customer configured their webhook URL with a typo in the domain, so events are never delivered.",
+    "reported_severity": "P2",
+    "affected_users": 1,
+    "total_users": 50,
+    "product": "Webhook Delivery Service",
+    "provider": null,
+    "environment": "production",
+    "error_messages": [
+      "delivery failed: DNS resolution error for endpoint"
+    ],
+    "logs": "webhook_url=https://hoollowpeak.example/hook status=dns_error attempts=12",
+    "reproduction_steps": [
+      "Trigger an event",
+      "Observe repeated DNS resolution failures"
+    ],
+    "first_seen_at": "2026-09-12T11:00:00Z",
+    "reported_at": "2026-09-12T11:45:00Z",
+    "recent_changes": [],
+    "customer_hypothesis": "Your webhook system must be misconfigured",
+    "metadata": {
+      "scenario": "bad_configuration"
+    }
+  },
+  {
+    "ticket_id": "TICK-90003",
+    "customer_id": "CUST-90003",
+    "customer_name": "Unnamed Reporter",
+    "customer_tier": "free",
+    "subject": "Things are broken",
+    "description": "It's not working.",
+    "reported_severity": null,
+    "affected_users": null,
+    "total_users": null,
+    "product": null,
+    "provider": null,
+    "environment": null,
+    "error_messages": [],
+    "logs": null,
+    "reproduction_steps": [],
+    "first_seen_at": null,
+    "reported_at": null,
+    "recent_changes": [],
+    "customer_hypothesis": null,
+    "metadata": {
+      "scenario": "insufficient_information"
+    }
+  },
+  {
+    "ticket_id": "TICK-90004",
+    "customer_id": "CUST-90004",
+    "customer_name": "Fairhaven Analytics",
+    "customer_tier": "enterprise",
+    "subject": "Your servers are down",
+    "description": "Customer reports total outage. Evidence shows an OAuth authorization failure, not a server outage.",
+    "reported_severity": "P1",
+    "affected_users": 12,
+    "total_users": 600,
+    "product": "AI Agent Platform",
+    "provider": "Google",
+    "environment": "production",
+    "error_messages": [
+      "HTTP 401 Unauthorized",
+      "error=invalid_scope"
+    ],
+    "logs": "tool=Drive.ListFiles status=401 error=invalid_scope required_scopes=[drive.readonly] granted_scopes=[]",
+    "reproduction_steps": [
+      "Call Drive.ListFiles",
+      "Observe HTTP 401 invalid_scope"
+    ],
+    "first_seen_at": "2026-09-16T08:00:00Z",
+    "reported_at": "2026-09-16T08:10:00Z",
+    "recent_changes": [
+      "Marketing site redesign launched"
+    ],
+    "customer_hypothesis": "Your servers are down",
+    "metadata": {
+      "scenario": "misleading_servers_down"
+    }
+  }
+]

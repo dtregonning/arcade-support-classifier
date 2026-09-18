@@ -1,0 +1,34 @@
+{
+  "ticket_id": "TICK-MERIDIAN-001",
+  "customer_id": "CUST-MERIDIAN",
+  "customer_name": "Meridian Financial",
+  "customer_tier": "enterprise",
+  "subject": "Gmail send failing for roughly a third of users",
+  "description": "Approximately one third of our users can no longer send Gmail through our AI agent. Our AI team believes Arcade is losing tokens.",
+  "reported_severity": "P1",
+  "affected_users": 333,
+  "total_users": 1000,
+  "product": "AI Agent Platform",
+  "provider": "Google",
+  "environment": "production",
+  "error_messages": [
+    "authorization_required: missing required scope gmail.compose"
+  ],
+  "logs": "tool=Gmail.SendEmail status=authorization_required required_scopes=[gmail.send,gmail.compose] granted_scopes=[gmail.readonly,gmail.send]",
+  "reproduction_steps": [
+    "Connect a Google account that authorized the agent about one month ago",
+    "Attempt to send an email via Gmail.SendEmail",
+    "Observe authorization_required response"
+  ],
+  "first_seen_at": "2026-09-15T14:30:00Z",
+  "recent_changes": [
+    "Okta signing certificate rotated Thursday",
+    "Salesforce has been returning HTTP 429 responses",
+    "Google toolkit upgraded v3.1 to v3.4 on Monday"
+  ],
+  "customer_hypothesis": "Arcade is losing tokens",
+  "metadata": {
+    "scenario": "hero_meridian",
+    "google_account_connected": "approximately one month ago"
+  }
+}
