@@ -59,6 +59,7 @@ src/support_automation/
   models/           Pydantic models: ticket, validation, enrichment, routing
   services/         deterministic business logic (validator, enricher, severity, router, recommendations)
   tools/            thin wrappers around services — these become MCP tools
+  webapp/           FastAPI web portal (form UI over the same services/tools)
   cli.py            uv run support-demo <ticket.json>
 tests/
 ```
@@ -70,6 +71,26 @@ uv sync
 uv run pytest
 uv run support-demo data/hero_ticket.json
 ```
+
+## Web Portal
+
+A minimal web front end for submitting a ticket and seeing it run through
+the same pipeline as the CLI — no database, no auth, nothing persisted
+server-side; a ticket is classified on submit and the result is returned
+straight to the browser.
+
+```bash
+uv run support-portal
+```
+
+Then open http://127.0.0.1:8000. Use the "Load an example…" picker to
+prefill the form with the hero ticket or any sample ticket, or fill it in
+by hand, and click **Classify ticket** to see validation, enrichment,
+severity, routing, and recommended/rejected actions rendered live.
+
+The portal is a thin FastAPI layer (`src/support_automation/webapp/`) over
+the exact same `services`/`tools` functions the CLI calls — it contains no
+business logic of its own.
 
 The hero scenario: an enterprise customer (Meridian) reports that a third
 of their users can't send Gmail, and their AI team suspects Arcade is

@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Support Automation Portal</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f7f7f8;
+    --panel: #ffffff;
+    --border: #dfe1e5;
+    --text: #1c1f23;
+    --muted: #62666e;
+    --accent: #3457d5;
+    --ok: #1c7c3f;
+    --warn: #a15c00;
+    --danger: #b3261e;
+    --mono: "SF Mono", "Menlo", "Consolas", monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #17181b;
+      --panel: #202226;
+      --border: #34363b;
+      --text: #ecedee;
+      --muted: #9a9ea6;
+      --accent: #7d93ff;
+      --ok: #4ad07f;
+      --warn: #e5a83d;
+      --danger: #f27065;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  header {
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 { margin: 0 0 4px; font-size: 18px; }
+  header p { margin: 0; color: var(--muted); font-size: 13px; }
+  main {
+    display: grid;
+    grid-template-columns: minmax(320px, 480px) 1fr;
+    gap: 20px;
+    padding: 20px 24px 40px;
+    max-width: 1400px;
+  }
+  @media (max-width: 900px) {
+    main { grid-template-columns: 1fr; }
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+  }
+  .panel h2 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    margin: 0 0 12px;
+  }
+  .field { margin-bottom: 12px; }
+  .field label {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .field input, .field select, .field textarea {
+    width: 100%;
+    padding: 7px 9px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    font: inherit;
+  }
+  .field textarea { resize: vertical; min-height: 44px; font-family: var(--mono); font-size: 12.5px; }
+  .row { display: flex; gap: 10px; }
+  .row > .field { flex: 1; }
+  .toolbar { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+  select#sample-picker { flex: 1; min-width: 160px; }
+  button {
+    font: inherit;
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--panel);
+    color: var(--text);
+    cursor: pointer;
+  }
+  button.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    font-weight: 600;
+  }
+  button:hover { filter: brightness(1.05); }
+  #result-empty { color: var(--muted); font-style: italic; }
+  .section { margin-bottom: 18px; }
+  .section h3 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
+    margin: 0 0 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .badge.p1 { background: color-mix(in srgb, var(--danger) 20%, transparent); color: var(--danger); }
+  .badge.p2 { background: color-mix(in srgb, var(--warn) 20%, transparent); color: var(--warn); }
+  .badge.p3, .badge.p4 { background: color-mix(in srgb, var(--ok) 20%, transparent); color: var(--ok); }
+  .badge.ready { background: color-mix(in srgb, var(--ok) 20%, transparent); color: var(--ok); }
+  .badge.not-ready { background: color-mix(in srgb, var(--danger) 20%, transparent); color: var(--danger); }
+  ul.plain { margin: 0; padding-left: 18px; }
+  ul.plain li { margin-bottom: 4px; }
+  .kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; font-size: 13px; }
+  .kv dt { color: var(--muted); }
+  .kv dd { margin: 0; }
+  .action-row {
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .action-row:last-child { border-bottom: none; }
+  .action-row .mark { font-size: 14px; width: 18px; text-align: center; flex-shrink: 0; }
+  .mark.automatic { color: var(--ok); }
+  .mark.human_approval { color: var(--warn); }
+  .mark.human_only { color: var(--danger); }
+  .action-row .name { font-family: var(--mono); font-size: 12.5px; }
+  .action-row .meta { color: var(--muted); font-size: 12px; }
+  .rejected-row { padding: 6px 0; border-bottom: 1px solid var(--border); }
+  .rejected-row:last-child { border-bottom: none; }
+  .rejected-row .name { font-family: var(--mono); font-size: 12.5px; color: var(--danger); }
+  .rejected-row .reason { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .evidence-tag {
+    font-family: var(--mono);
+    font-size: 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 6px 8px;
+    margin-bottom: 6px;
+  }
+  .quote { font-style: italic; color: var(--muted); }
+  #error-banner {
+    display: none;
+    background: color-mix(in srgb, var(--danger) 15%, transparent);
+    color: var(--danger);
+    border: 1px solid var(--danger);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 16px;
+    font-size: 13px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Support Automation Portal</h1>
+  <p>Submit a ticket to run it through validation, enrichment, severity assessment, routing, and recommended actions — the same deterministic pipeline behind <code>support-demo</code>.</p>
+</header>
+
+<main>
+  <section class="panel">
+    <h2>Submit a ticket</h2>
+    <div class="toolbar">
+      <select id="sample-picker"><option value="">Load an example…</option></select>
+      <button id="load-sample-btn">Load</button>
+      <button id="clear-btn">Clear</button>
+    </div>
+
+    <form id="ticket-form">
+      <div class="row">
+        <div class="field"><label>Customer name</label><input name="customer_name" /></div>
+        <div class="field"><label>Customer ID</label><input name="customer_id" /></div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Customer tier</label>
+          <select name="customer_tier">
+            <option value="">—</option>
+            <option value="enterprise">enterprise</option>
+            <option value="business">business</option>
+            <option value="free">free</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Reported severity</label>
+          <select name="reported_severity">
+            <option value="">—</option>
+            <option>P1</option><option>P2</option><option>P3</option><option>P4</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field"><label>Subject</label><input name="subject" /></div>
+      <div class="field"><label>Description</label><textarea name="description"></textarea></div>
+
+      <div class="row">
+        <div class="field"><label>Affected users</label><input type="number" name="affected_users" min="0" /></div>
+        <div class="field"><label>Total users</label><input type="number" name="total_users" min="0" /></div>
+      </div>
+
+      <div class="row">
+        <div class="field"><label>Product</label><input name="product" /></div>
+        <div class="field"><label>Provider</label><input name="provider" /></div>
+        <div class="field">
+          <label>Environment</label>
+          <select name="environment">
+            <option value="">—</option>
+            <option value="production">production</option>
+            <option value="staging">staging</option>
+            <option value="development">development</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field"><label>Error messages (one per line)</label><textarea name="error_messages"></textarea></div>
+      <div class="field"><label>Logs</label><textarea name="logs" placeholder="e.g. tool=Gmail.SendEmail status=authorization_required required_scopes=[gmail.send,gmail.compose] granted_scopes=[gmail.readonly,gmail.send]"></textarea></div>
+      <div class="field"><label>Reproduction steps (one per line)</label><textarea name="reproduction_steps"></textarea></div>
+
+      <div class="field"><label>First seen at</label><input type="datetime-local" name="first_seen_at" /></div>
+      <div class="field"><label>Recent changes (one per line)</label><textarea name="recent_changes"></textarea></div>
+      <div class="field"><label>Customer hypothesis</label><textarea name="customer_hypothesis"></textarea></div>
+
+      <button class="primary" type="submit">Classify ticket</button>
+    </form>
+  </section>
+
+  <section class="panel">
+    <h2>Result</h2>
+    <div id="error-banner"></div>
+    <div id="result-empty">Submit a ticket to see validation, enrichment, severity, routing, and recommended actions here.</div>
+    <div id="result" hidden></div>
+  </section>
+</main>
+
+<script>
+const form = document.getElementById("ticket-form");
+const resultEl = document.getElementById("result");
+const emptyEl = document.getElementById("result-empty");
+const errorBanner = document.getElementById("error-banner");
+const samplePicker = document.getElementById("sample-picker");
+
+let samples = [];
+
+async function loadSamples() {
+  try {
+    const res = await fetch("/api/samples");
+    samples = await res.json();
+    for (const s of samples) {
+      const opt = document.createElement("option");
+      opt.value = s.ticket_id;
+      opt.textContent = `${s.ticket_id} — ${s.subject || "(no subject)"}`;
+      samplePicker.appendChild(opt);
+    }
+  } catch (e) {
+    console.error("Failed to load samples", e);
+  }
+}
+
+function toDatetimeLocal(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function fillForm(ticket) {
+  form.reset();
+  for (const [key, value] of Object.entries(ticket)) {
+    const input = form.elements.namedItem(key);
+    if (!input) continue;
+    if (Array.isArray(value)) {
+      input.value = value.join("\n");
+    } else if (key === "first_seen_at" || key === "reported_at") {
+      if (input.type === "datetime-local") input.value = toDatetimeLocal(value);
+    } else if (value !== null && value !== undefined) {
+      input.value = value;
+    }
+  }
+}
+
+document.getElementById("load-sample-btn").addEventListener("click", () => {
+  const ticket = samples.find((s) => s.ticket_id === samplePicker.value);
+  if (ticket) fillForm(ticket);
+});
+
+document.getElementById("clear-btn").addEventListener("click", () => {
+  form.reset();
+  samplePicker.value = "";
+});
+
+function linesToList(text) {
+  return text.split("\n").map((l) => l.trim()).filter(Boolean);
+}
+
+function buildPayload() {
+  const data = new FormData(form);
+  const payload = {};
+  for (const [key, value] of data.entries()) {
+    if (value === "") continue;
+    if (["error_messages", "reproduction_steps", "recent_changes"].includes(key)) {
+      payload[key] = linesToList(value);
+    } else if (["affected_users", "total_users"].includes(key)) {
+      payload[key] = Number(value);
+    } else if (key === "first_seen_at") {
+      payload[key] = new Date(value).toISOString();
+    } else {
+      payload[key] = value;
+    }
+  }
+  return payload;
+}
+
+const EXECUTION_MARK = { automatic: "✓", human_approval: "△", human_only: "⛔" };
+
+function el(tag, opts = {}, children = []) {
+  const node = document.createElement(tag);
+  if (opts.className) node.className = opts.className;
+  if (opts.text !== undefined) node.textContent = opts.text;
+  if (opts.html !== undefined) node.innerHTML = opts.html;
+  for (const child of children) node.appendChild(child);
+  return node;
+}
+
+function section(title, children) {
+  return el("div", { className: "section" }, [
+    el("h3", { text: title }),
+    ...children,
+  ]);
+}
+
+function list(items) {
+  return el(
+    "ul",
+    { className: "plain" },
+    items.map((text) => el("li", { text }))
+  );
+}
+
+function render(data) {
+  resultEl.innerHTML = "";
+  const { ticket, validation, enrichment, severity, routing, recommendation } = data;
+
+  const impact =
+    ticket.affected_users != null && ticket.total_users
+      ? `~${Math.round((100 * ticket.affected_users) / ticket.total_users)}% users (${ticket.affected_users}/${ticket.total_users})`
+      : "unknown";
+
+  const header = el("div", { className: "section" }, [
+    el("h3", { text: `${ticket.customer_name || ticket.customer_id || "Unknown customer"} — ${ticket.ticket_id}` }),
+    el("div", { className: "kv" }, [
+      el("dt", { text: "Subject" }), el("dd", { text: ticket.subject || "(none)" }),
+      el("dt", { text: "Impact" }), el("dd", { text: impact }),
+    ]),
+  ]);
+  resultEl.appendChild(header);
+
+  const readyBadge = el("span", {
+    className: `badge ${validation.ready_for_automation ? "ready" : "not-ready"}`,
+    text: validation.ready_for_automation ? "AUTOMATION READY" : "NEEDS REVIEW",
+  });
+  const validationChildren = [
+    el("div", { className: "kv" }, [
+      el("dt", { text: "Completeness" }), el("dd", { text: `${validation.completeness_score}%` }),
+      el("dt", { text: "Valid" }), el("dd", { text: validation.valid ? "yes" : "no" }),
+    ]),
+  ];
+  if (validation.missing_fields.length) {
+    validationChildren.push(el("div", { className: "evidence-tag", text: `Missing: ${validation.missing_fields.join(", ")}` }));
+  }
+  for (const w of validation.warnings) {
+    validationChildren.push(el("div", { className: "evidence-tag", text: `[${w.code}] ${w.message}` }));
+  }
+  const validationSection = section("Validation", validationChildren);
+  validationSection.querySelector("h3").appendChild(readyBadge);
+  resultEl.appendChild(validationSection);
+
+  const enrichChildren = [
+    el("div", { className: "kv" }, [
+      el("dt", { text: "Domains" }), el("dd", { text: enrichment.domains.join(", ") || "none detected" }),
+      el("dt", { text: "Technologies" }), el("dd", { text: enrichment.technologies.join(", ") || "none detected" }),
+    ]),
+  ];
+  if (enrichment.signals.length) {
+    enrichChildren.push(list(enrichment.signals.map((s) => `${s.type} = ${s.value} — ${s.evidence}`)));
+  }
+  if (enrichment.possible_causes.length) {
+    enrichChildren.push(
+      list(enrichment.possible_causes.map((c) => `${c.cause} (confidence ${Math.round(c.confidence * 100)}%) — ${c.reason_codes.join(", ")}`))
+    );
+  }
+  if (enrichment.customer_hypotheses.length) {
+    enrichChildren.push(el("div", { className: "quote", text: `Customer hypothesis (not treated as fact): "${enrichment.customer_hypotheses.join('"; "')}"` }));
+  }
+  if (enrichment.correlated_recent_changes.length) {
+    enrichChildren.push(el("div", { className: "evidence-tag", text: `Correlated (investigation lead, not a confirmed cause): ${enrichment.correlated_recent_changes.join("; ")}` }));
+  }
+  if (enrichment.uncorrelated_recent_changes.length) {
+    for (const u of enrichment.uncorrelated_recent_changes) {
+      enrichChildren.push(el("div", { className: "evidence-tag", text: `Not implicated: ${u.change} — ${u.reason}` }));
+    }
+  }
+  resultEl.appendChild(section("Signals & enrichment", enrichChildren));
+
+  const sevBadge = el("span", { className: `badge ${severity.recommended_severity.toLowerCase()}`, text: severity.recommended_severity });
+  const sevChildren = [
+    el("div", { className: "kv" }, [
+      el("dt", { text: "Reported" }), el("dd", { text: severity.reported_severity || "not reported" }),
+      el("dt", { text: "Recommended" }), el("dd", {}, [sevBadge]),
+    ]),
+    list(severity.reasoning),
+  ];
+  resultEl.appendChild(section("Severity", sevChildren));
+
+  const routingChildren = [
+    el("div", { className: "kv" }, [
+      el("dt", { text: "Queue" }), el("dd", { text: routing.queue }),
+      el("dt", { text: "Owner" }), el("dd", { text: routing.owner }),
+      el("dt", { text: "Matched rule" }), el("dd", { text: `${routing.matched_rule} (${Math.round(routing.routing_confidence * 100)}%)` }),
+      el("dt", { text: "Human review" }), el("dd", { text: routing.requires_human_review ? "required" : "not required" }),
+    ]),
+  ];
+  resultEl.appendChild(section("Routing", routingChildren));
+
+  const actionsChildren = recommendation.actions.map((a) =>
+    el("div", { className: "action-row" }, [
+      el("span", { className: `mark ${a.execution}`, text: EXECUTION_MARK[a.execution] || "?" }),
+      el("span", { className: "name", text: a.action }),
+      el("span", { className: "meta", text: `risk: ${a.risk} · ${a.execution}` }),
+    ])
+  );
+  resultEl.appendChild(section("Recommended actions", actionsChildren.length ? actionsChildren : [el("div", { className: "quote", text: "none" })]));
+
+  const rejectedChildren = recommendation.actions_rejected.map((r) =>
+    el("div", { className: "rejected-row" }, [
+      el("div", { className: "name", text: `✗ ${r.action}` }),
+      el("div", { className: "reason", text: r.reason }),
+    ])
+  );
+  resultEl.appendChild(section("Rejected actions", rejectedChildren.length ? rejectedChildren : [el("div", { className: "quote", text: "none" })]));
+
+  emptyEl.hidden = true;
+  resultEl.hidden = false;
+}
+
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  errorBanner.style.display = "none";
+  try {
+    const res = await fetch("/api/tickets/classify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(buildPayload()),
+    });
+    if (!res.ok) {
+      const detail = await res.text();
+      throw new Error(detail || `HTTP ${res.status}`);
+    }
+    render(await res.json());
+  } catch (err) {
+    errorBanner.textContent = `Failed to classify ticket: ${err.message}`;
+    errorBanner.style.display = "block";
+  }
+});
+
+loadSamples();
+</script>
+</body>
+</html>

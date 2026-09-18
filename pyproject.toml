@@ -7,10 +7,13 @@ requires-python = ">=3.12"
 dependencies = [
     "pydantic>=2.6",
     "pyyaml>=6.0",
+    "fastapi>=0.110",
+    "uvicorn>=0.27",
 ]
 
 [project.scripts]
 support-demo = "support_automation.cli:main"
+support-portal = "support_automation.webapp.app:main"
 
 [project.optional-dependencies]
 mcp = [
@@ -21,6 +24,7 @@ mcp = [
 dev = [
     "pytest>=8.0",
     "ruff>=0.6",
+    "httpx>=0.27",
 ]
 
 [build-system]
