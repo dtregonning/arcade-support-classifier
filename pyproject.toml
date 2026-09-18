@@ -11,6 +11,7 @@ dependencies = [
     "uvicorn>=0.27",
     "arcade-mcp-server>=1.17.0,<2.0.0",
     "arcadepy>=1.8.0,<2.0.0",
+    "python-dotenv>=1.0.0,<2.0.0",
 ]
 
 [project.scripts]

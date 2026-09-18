@@ -21,6 +21,7 @@ import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -36,6 +37,11 @@ from support_automation.webapp.schemas import ClassificationResult, TicketSubmis
 
 _STATIC_DIR = Path(__file__).resolve().parent / "static"
 _DATA_DIR = Path(__file__).resolve().parents[3] / "data"
+
+# Loaded here (not relied on from the shell) so `uv run support-portal`
+# picks up ARCADE_API_KEY/ARCADE_USER_ID/LINEAR_TEAM/SLACK_CHANNEL from
+# .env without the caller having to `source .env` first.
+load_dotenv(Path(__file__).resolve().parents[3] / ".env")
 
 app = FastAPI(title="Support Automation Portal")
 app.mount("/static", StaticFiles(directory=_STATIC_DIR), name="static")
