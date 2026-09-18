@@ -7,15 +7,15 @@ for fields that are actually present on the ticket.
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 
 import yaml
 
+from support_automation._config_paths import config_path
 from support_automation.models.ticket import SupportTicket
 from support_automation.models.validation import ValidationResult, ValidationWarning
 
-_CONFIG_PATH = Path(__file__).resolve().parents[3] / "config" / "validation_rules.yaml"
+_CONFIG_PATH = config_path("validation_rules.yaml")
 
 
 def _load_rules() -> dict[str, Any]:

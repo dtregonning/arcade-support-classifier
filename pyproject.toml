@@ -32,6 +32,12 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["src/support_automation"]
 
+# config/ lives at the repo root (see CLAUDE.md's repo layout / support_automation._config_paths)
+# so it stays trivially editable without touching src/, but it must still ship inside the wheel
+# for deployed installs (e.g. Arcade) where the repo root doesn't exist on disk.
+[tool.hatch.build.targets.wheel.force-include]
+"config" = "support_automation/config"
+
 [tool.ruff]
 line-length = 100
 target-version = "py312"

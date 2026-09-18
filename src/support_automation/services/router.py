@@ -8,16 +8,16 @@ behavior should never require a code change.
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any
 
 import yaml
 
+from support_automation._config_paths import config_path
 from support_automation.models.enrichment import TicketEnrichment
 from support_automation.models.routing import RoutingResult
 from support_automation.models.ticket import SupportTicket
 
-_CONFIG_PATH = Path(__file__).resolve().parents[3] / "config" / "routing_rules.yaml"
+_CONFIG_PATH = config_path("routing_rules.yaml")
 
 _LOW_CONFIDENCE_THRESHOLD = 0.6
 
