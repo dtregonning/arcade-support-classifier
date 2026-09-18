@@ -124,24 +124,40 @@ def _slack_message(
     return "\n".join(lines)
 
 
-def _ensure_authorized(client: ArcadeToolClient, tool_name: str, user_id: str) -> str | None:
-    """Returns an authorization URL if `tool_name` isn't authorized yet for
-    `user_id`, else None."""
-    response = client.tools.authorize(tool_name=tool_name, user_id=user_id)
-    if response.status == "completed":
-        return None
-    return response.url
+class _ToolRun:
+    """Outcome of one `tools.execute` call. Deliberately not a pre-flight
+    authorize() check — an earlier version of this module called
+    `client.tools.authorize()` before every execute() to decide whether to
+    run at all, but that call proved unreliable in practice: it kept
+    reporting a stale "needs_authorization" for an already-authorized
+    user/tool pair (confirmed independently authorized via
+    `client.auth.start()`, and confirmed working via a direct
+    `tools.execute()` call) rather than reflecting the tool's real,
+    current authorization state. `execute()` itself is the source of
+    truth: on success it runs the tool; when the grant is genuinely
+    missing, Arcade signals that through `output.authorization` on the
+    execute response itself rather than requiring a separate check."""
+
+    def __init__(self, ok: bool, value: dict | None, error: str | None, auth_url: str | None):
+        self.ok = ok
+        self.value = value
+        self.error = error
+        self.auth_url = auth_url
 
 
-def _run_tool(
-    client: ArcadeToolClient, tool_name: str, user_id: str, input_: dict
-) -> tuple[bool, dict | None, str | None]:
+def _run_tool(client: ArcadeToolClient, tool_name: str, user_id: str, input_: dict) -> _ToolRun:
     response = client.tools.execute(tool_name=tool_name, input=input_, user_id=user_id)
+    output = response.output
     if response.success:
-        value = response.output.value if response.output else None
-        return True, value if isinstance(value, dict) else None, None
-    error = response.output.error.message if response.output and response.output.error else None
-    return False, None, error or "Unknown error"
+        value = output.value if output else None
+        return _ToolRun(True, value if isinstance(value, dict) else None, None, None)
+
+    authorization = getattr(output, "authorization", None) if output else None
+    if authorization and getattr(authorization, "status", None) != "completed":
+        return _ToolRun(False, None, None, getattr(authorization, "url", None))
+
+    error = output.error.message if output and output.error else None
+    return _ToolRun(False, None, error or "Unknown error", None)
 
 
 def execute_auto_actions(
@@ -191,44 +207,44 @@ def execute_auto_actions(
                 )
             )
         else:
-            auth_url = _ensure_authorized(resolved_client, "Linear.CreateIssue", user_id)
-            if auth_url:
+            title = (
+                f"{ticket.subject or ticket.description or 'Support ticket'} — "
+                f"{ticket.customer_name or ticket.customer_id or ticket.ticket_id}"
+            )
+            run = _run_tool(
+                resolved_client,
+                "Linear.CreateIssue",
+                user_id,
+                {
+                    "team": team,
+                    "title": title,
+                    "description": _linear_description(ticket, enrichment, severity, routing),
+                    "priority": _LINEAR_PRIORITY_BY_SEVERITY.get(
+                        severity.recommended_severity, "none"
+                    ),
+                },
+            )
+            if run.ok:
+                linear_url = (run.value or {}).get("issue", {}).get("url")
                 results.append(
                     ExecutionResult(
-                        action="create_linear_issue", status="needs_authorization", detail=auth_url
+                        action="create_linear_issue",
+                        status="executed",
+                        detail=linear_url or "Issue created.",
+                    )
+                )
+            elif run.auth_url:
+                results.append(
+                    ExecutionResult(
+                        action="create_linear_issue",
+                        status="needs_authorization",
+                        detail=run.auth_url,
                     )
                 )
             else:
-                title = (
-                    f"{ticket.subject or ticket.description or 'Support ticket'} — "
-                    f"{ticket.customer_name or ticket.customer_id or ticket.ticket_id}"
+                results.append(
+                    ExecutionResult(action="create_linear_issue", status="failed", detail=run.error)
                 )
-                ok, value, error = _run_tool(
-                    resolved_client,
-                    "Linear.CreateIssue",
-                    user_id,
-                    {
-                        "team": team,
-                        "title": title,
-                        "description": _linear_description(ticket, enrichment, severity, routing),
-                        "priority": _LINEAR_PRIORITY_BY_SEVERITY.get(
-                            severity.recommended_severity, "none"
-                        ),
-                    },
-                )
-                if ok:
-                    linear_url = (value or {}).get("issue", {}).get("url")
-                    results.append(
-                        ExecutionResult(
-                            action="create_linear_issue",
-                            status="executed",
-                            detail=linear_url or "Issue created.",
-                        )
-                    )
-                else:
-                    results.append(
-                        ExecutionResult(action="create_linear_issue", status="failed", detail=error)
-                    )
 
     if "notify_support_channel" in auto_actions:
         channel = os.environ.get("SLACK_CHANNEL")
@@ -241,40 +257,36 @@ def execute_auto_actions(
                 )
             )
         else:
-            auth_url = _ensure_authorized(resolved_client, "Slack.SendMessage", user_id)
-            if auth_url:
+            run = _run_tool(
+                resolved_client,
+                "Slack.SendMessage",
+                user_id,
+                {
+                    "channel_name": channel,
+                    "message": _slack_message(ticket, enrichment, severity, routing, linear_url),
+                },
+            )
+            if run.ok:
+                results.append(
+                    ExecutionResult(
+                        action="notify_support_channel",
+                        status="executed",
+                        detail=f"Posted to #{channel.lstrip('#')}.",
+                    )
+                )
+            elif run.auth_url:
                 results.append(
                     ExecutionResult(
                         action="notify_support_channel",
                         status="needs_authorization",
-                        detail=auth_url,
+                        detail=run.auth_url,
                     )
                 )
             else:
-                ok, _value, error = _run_tool(
-                    resolved_client,
-                    "Slack.SendMessage",
-                    user_id,
-                    {
-                        "channel_name": channel,
-                        "message": _slack_message(
-                            ticket, enrichment, severity, routing, linear_url
-                        ),
-                    },
+                results.append(
+                    ExecutionResult(
+                        action="notify_support_channel", status="failed", detail=run.error
+                    )
                 )
-                if ok:
-                    results.append(
-                        ExecutionResult(
-                            action="notify_support_channel",
-                            status="executed",
-                            detail=f"Posted to #{channel}.",
-                        )
-                    )
-                else:
-                    results.append(
-                        ExecutionResult(
-                            action="notify_support_channel", status="failed", detail=error
-                        )
-                    )
 
     return results

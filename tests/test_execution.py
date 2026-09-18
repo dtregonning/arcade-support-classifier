@@ -38,32 +38,38 @@ def _hero_context():
     return ticket, enrichment, severity, routing, recommendation
 
 
-class _FakeAuthResponse:
-    def __init__(self, status="completed", url=None):
+class _FakeAuthorization:
+    def __init__(self, status, url):
         self.status = status
         self.url = url
 
 
 class _FakeExecuteResponse:
-    def __init__(self, success, value=None, error_message=None):
+    def __init__(self, success, value=None, error_message=None, authorization=None):
         self.success = success
         error = SimpleNamespace(message=error_message) if error_message else None
-        self.output = SimpleNamespace(value=value, error=error)
+        self.output = SimpleNamespace(value=value, error=error, authorization=authorization)
 
 
 class _FakeTools:
+    """Mirrors arcadepy: authorization state is only ever learned from an
+    execute() response's `output.authorization`, never a separate
+    pre-check — see the comment on `_ToolRun` in execution.py for why."""
+
     def __init__(self, authorized=True, linear_url="https://linear.app/x/issue/DON-1"):
         self.authorized = authorized
         self.linear_url = linear_url
         self.executed = []
 
-    def authorize(self, *, tool_name, user_id):
-        if self.authorized:
-            return _FakeAuthResponse(status="completed")
-        return _FakeAuthResponse(status="pending", url=f"https://arcade.dev/authorize/{tool_name}")
-
     def execute(self, *, tool_name, input, user_id):
         self.executed.append((tool_name, input))
+        if not self.authorized:
+            return _FakeExecuteResponse(
+                success=False,
+                authorization=_FakeAuthorization(
+                    status="pending", url=f"https://arcade.dev/authorize/{tool_name}"
+                ),
+            )
         if tool_name == "Linear.CreateIssue":
             return _FakeExecuteResponse(
                 success=True, value={"issue": {"url": self.linear_url}}
