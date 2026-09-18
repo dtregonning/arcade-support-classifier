@@ -1,0 +1,95 @@
+# Ticket routing policy. Rules are evaluated in descending `priority` order
+# and the first matching rule wins. `confidence` is the routing engine's
+# static confidence for that rule; combined with the matched signal's own
+# confidence (from enrichment) it decides whether human review is required.
+#
+# `when` supports: domain, domain_any, provider, signal, signal_any, always.
+# All keys present in a single rule's `when` block must match (AND).
+
+rules:
+  - id: oauth-google
+    priority: 100
+    confidence: 0.96
+    when:
+      domain: oauth
+      domain_any: [google]
+    route:
+      queue: identity-integrations
+      owner: support-engineering
+
+  - id: oauth-expired-token
+    priority: 95
+    confidence: 0.85
+    when:
+      domain: oauth
+      signal: expired_token
+    route:
+      queue: identity-integrations
+      owner: support-engineering
+
+  - id: kubernetes-crash
+    priority: 90
+    confidence: 0.9
+    when:
+      domain: kubernetes
+      signal_any: [container_crash, oom_kill]
+    route:
+      queue: platform
+      owner: platform-support
+
+  - id: api-rate-limit
+    priority: 80
+    confidence: 0.8
+    when:
+      signal: rate_limit
+    route:
+      queue: integrations
+      owner: support-engineering
+
+  - id: database-connection-exhaustion
+    priority: 75
+    confidence: 0.85
+    when:
+      domain: database
+      signal: db_connection_exhaustion
+    route:
+      queue: platform
+      owner: platform-support
+
+  - id: network-timeout
+    priority: 60
+    confidence: 0.6
+    when:
+      domain: network
+      signal: network_timeout
+    route:
+      queue: integrations
+      owner: support-engineering
+
+  - id: bad-configuration
+    priority: 55
+    confidence: 0.7
+    when:
+      domain: configuration
+      signal: configuration_error
+    route:
+      queue: general-triage
+      owner: support
+
+  - id: upstream-http-500
+    priority: 50
+    confidence: 0.5
+    when:
+      signal: http_500
+    route:
+      queue: integrations
+      owner: support-engineering
+
+  - id: unknown
+    priority: 0
+    confidence: 0.3
+    when:
+      always: true
+    route:
+      queue: general-triage
+      owner: support
