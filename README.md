@@ -187,6 +187,22 @@ A few things worth knowing if you redo this setup:
 - `arcade connect` always creates a new gateway and a new top-level
   `mcpServers` entry in `~/.claude.json` rather than updating a previous
   one — clean up stray entries by hand if you iterate on the setup.
+- Connecting the gateway itself (via `mcp__<server>__authenticate`) is a
+  separate OAuth step from authorizing the Slack/Linear *tools* — the
+  gateway login gets you tool discovery, but `Linear.CreateIssue` and
+  `Slack.SendMessage` each still need their own per-service consent the
+  first time they're used. Call `System_ManageAuthorization` with
+  `action: "authorize"` and every tool the job will touch up front — it
+  batches all the needed service grants into one consolidated ask instead
+  of walking the user through a fresh OAuth screen per tool call.
+- The `identity-integrations` / `support-engineering` names in this repo's
+  routing policy and sample data are illustrative — they won't exist in a
+  fresh Linear/Slack workspace. `Linear.CreateIssue` needs a real team
+  (name, key, or UUID) and `Slack.SendMessage` needs a real, existing
+  channel; both fail with a clear "not found" error (Linear lists your
+  actual teams, Slack lists your actual channels) rather than silently
+  falling back to something else. Point them at a real team/channel — or
+  create one first — before running the live Arcade flow end-to-end.
 
 ## Safety Model
 

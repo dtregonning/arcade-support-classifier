@@ -169,6 +169,22 @@ Note what's *not* in that chain: no customer-facing message is ever sent
 automatically. `request_google_reauthorization` stays at △ — a human has
 to approve it — by design, not by omission.
 
+**If you're running this live rather than narrating it:** the gateway
+login (`authenticate`/`complete_authentication`) only grants tool
+*discovery* — `Linear.CreateIssue` and `Slack.SendMessage` each need their
+own separate OAuth consent the first time they're actually called. Batch
+that ask up front with `System_ManageAuthorization(action="authorize",
+tools=["Linear_CreateIssue", "Slack_SendMessage"])` so the user authorizes
+both services once instead of hitting a consent screen mid-demo. Also:
+`identity-integrations` and `support-engineering` are this repo's policy
+names, not real Linear/Slack targets — `Linear.CreateIssue` needs an
+actual team and `Slack.SendMessage` needs an actual, already-existing
+channel in whatever workspace you've connected. Check with
+`Arcade_ListApps` or just try the call — both tools return the real
+available teams/channels on a "not found" error — and confirm the target
+with whoever's driving the demo before you create a real issue or post a
+real message.
+
 ---
 
 ## Closing point
