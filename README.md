@@ -99,6 +99,31 @@ The classification half of the portal is a thin FastAPI layer
 (`src/support_automation/webapp/`) over the exact same `services`/`tools`
 functions the CLI calls — it contains no business logic of its own.
 
+### Taxonomy
+
+Every classified ticket carries a compact taxonomy strip — Company,
+Priority, System affected, and Area — shown at the top of the CLI report
+and the portal's result panel, built entirely from fields the pipeline
+already computes (`ticket.customer_name`, `severity.recommended_severity`,
+`enrichment.technologies`, `enrichment.domains`). No new decision logic.
+
+Area is the one field with an AI fallback behind it, and it's a narrow,
+deliberately caged one. `enrichment.system_areas` is typed as
+`SystemArea`, a closed enum (`models/enrichment.py`) — constructing an
+enrichment result with any value outside that enum raises a validation
+error, not a warning. When the deterministic rule engine detects a
+domain, that's mapped straight into `system_areas` (no AI involved, see
+`services/enricher.py`). Only when the rule engine finds nothing at all
+does `tools/enrich_ticket.py` consult `services/ai_area_classifier.py`,
+which asks Claude to pick one value via forced tool-use with the same
+enum as the tool's JSON schema — the model cannot return a tag outside
+that set, so this can't grow into an unbounded pile of one-off labels
+over time. `system_areas` is never read by `services/router.py`; only
+the rule-based `domains` field feeds routing, so an AI guess here can
+never influence a policy decision. Without `ANTHROPIC_API_KEY`, an
+unclassified ticket's area just stays `unknown` — same
+zero-credentials-required guarantee as the rest of the system.
+
 ### Live Linear/Slack execution
 
 After classifying, the portal calls

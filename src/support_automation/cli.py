@@ -68,6 +68,22 @@ def format_report(
     w(_impact_line(ticket))
     w("")
 
+    w("TAXONOMY")
+    w("-" * 40)
+    company = ticket.customer_name or ticket.customer_id or "Unknown"
+    system_affected = ", ".join(enrichment.technologies) or "none detected"
+    area = ", ".join(a.value for a in enrichment.system_areas)
+    area_note = {
+        "rule_based": "",
+        "ai_classified": " (AI-classified)",
+        "unknown": " (unclassified)",
+    }[enrichment.system_area_source]
+    w(f"Company: {company}")
+    w(f"Priority: {severity.recommended_severity.value}")
+    w(f"System affected: {system_affected}")
+    w(f"Area: {area}{area_note}")
+    w("")
+
     w("VALIDATION")
     w("-" * 40)
     w(f"Completeness: {validation.completeness_score}%")

@@ -391,6 +391,25 @@ function render(data) {
   ]);
   resultEl.appendChild(header);
 
+  const areaNote = {
+    rule_based: "",
+    ai_classified: " (AI-classified)",
+    unknown: " (unclassified)",
+  }[enrichment.system_area_source];
+  const priorityBadge = el("span", {
+    className: `badge ${severity.recommended_severity.toLowerCase()}`,
+    text: severity.recommended_severity,
+  });
+  const taxonomyChildren = [
+    el("div", { className: "kv" }, [
+      el("dt", { text: "Company" }), el("dd", { text: ticket.customer_name || ticket.customer_id || "Unknown" }),
+      el("dt", { text: "Priority" }), el("dd", {}, [priorityBadge]),
+      el("dt", { text: "System affected" }), el("dd", { text: enrichment.technologies.join(", ") || "none detected" }),
+      el("dt", { text: "Area" }), el("dd", { text: (enrichment.system_areas.join(", ") || "unknown") + areaNote }),
+    ]),
+  ];
+  resultEl.appendChild(section("Taxonomy", taxonomyChildren));
+
   const readyBadge = el("span", {
     className: `badge ${validation.ready_for_automation ? "ready" : "not-ready"}`,
     text: validation.ready_for_automation ? "AUTOMATION READY" : "NEEDS REVIEW",

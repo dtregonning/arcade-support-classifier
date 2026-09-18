@@ -23,6 +23,7 @@ from typing import Protocol
 from support_automation.models.enrichment import (
     PossibleCause,
     Signal,
+    SystemArea,
     TicketEnrichment,
     UncorrelatedChange,
 )
@@ -50,9 +51,12 @@ _CORRELATION_KEYWORDS: dict[str, list[str]] = {
 }
 
 
-def _evidence_text(ticket: SupportTicket) -> str:
+def evidence_text(ticket: SupportTicket) -> str:
     """Text drawn only from structured evidence fields, never the customer's
-    hypothesis — keeps facts derived here separate from customer claims."""
+    hypothesis — keeps facts derived here separate from customer claims.
+    Public (not `_`-prefixed): tools/enrich_ticket.py reuses this exact
+    text for the optional AI area-classification fallback, so both paths
+    see the same evidence."""
     parts = [
         ticket.subject or "",
         ticket.description or "",
@@ -276,6 +280,33 @@ _RULES: list[tuple[list[str], list[str], float, str, list[str], object]] = [
 ]
 
 
+_DOMAIN_TO_AREA: dict[str, SystemArea] = {
+    "identity": SystemArea.IDENTITY,
+    "oauth": SystemArea.OAUTH,
+    "google": SystemArea.GOOGLE,
+    "platform": SystemArea.PLATFORM,
+    "kubernetes": SystemArea.KUBERNETES,
+    "integrations": SystemArea.INTEGRATIONS,
+    "api": SystemArea.API,
+    "database": SystemArea.DATABASE,
+    "network": SystemArea.NETWORK,
+    "configuration": SystemArea.CONFIGURATION,
+}
+
+
+def _system_areas(domains: list[str]) -> tuple[list[SystemArea], str]:
+    """Deterministic mapping from the free-string `domains` this module
+    already detects to the closed SystemArea taxonomy enum -- a pure
+    relabeling, no new detection logic. `toolkit` and `mcp_runtime` have
+    no rule-based path yet (nothing here currently detects them); they
+    only ever get assigned by the AI fallback in tools/enrich_ticket.py
+    when `domains` comes back empty."""
+    areas = [_DOMAIN_TO_AREA[d] for d in domains if d in _DOMAIN_TO_AREA]
+    if areas:
+        return areas, "rule_based"
+    return [SystemArea.UNKNOWN], "unknown"
+
+
 def _technology_hits(text: str) -> list[str]:
     known = {
         "salesforce": "Salesforce",
@@ -315,7 +346,7 @@ class RuleBasedEnricher:
     """Deterministic, keyword/regex-driven enrichment. No external calls."""
 
     def enrich(self, ticket: SupportTicket) -> TicketEnrichment:
-        text = _evidence_text(ticket)
+        text = evidence_text(ticket)
 
         domains: list[str] = []
         technologies: set[str] = set()
@@ -362,6 +393,7 @@ class RuleBasedEnricher:
         ]
 
         customer_hypotheses = [ticket.customer_hypothesis] if ticket.customer_hypothesis else []
+        system_areas, system_area_source = _system_areas(domains)
 
         return TicketEnrichment(
             domains=domains,
@@ -372,4 +404,6 @@ class RuleBasedEnricher:
             observed_facts=observed_facts,
             possible_causes=possible_causes,
             uncorrelated_recent_changes=uncorrelated,
+            system_areas=system_areas,
+            system_area_source=system_area_source,
         )

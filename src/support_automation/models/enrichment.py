@@ -11,7 +11,40 @@ observed facts via `evidence`.
 
 from __future__ import annotations
 
-from pydantic import BaseModel
+from enum import StrEnum
+from typing import Literal
+
+from pydantic import BaseModel, Field
+
+
+class SystemArea(StrEnum):
+    """The closed set of taxonomy "system area" tags a ticket can carry.
+
+    Deliberately closed, not free text: this is a Pydantic enum, so
+    constructing a TicketEnrichment with any value outside this list
+    raises a validation error rather than silently minting a new tag.
+    That's what keeps this from turning into an unbounded pile of
+    one-off labels over time -- adding a new area means editing this
+    enum (and deciding whether it needs a rule in services/enricher.py),
+    never happens implicitly through user input or an AI guess.
+    """
+
+    IDENTITY = "identity"
+    OAUTH = "oauth"
+    GOOGLE = "google"
+    KUBERNETES = "kubernetes"
+    DATABASE = "database"
+    NETWORK = "network"
+    API = "api"
+    CONFIGURATION = "configuration"
+    PLATFORM = "platform"
+    INTEGRATIONS = "integrations"
+    TOOLKIT = "toolkit"
+    MCP_RUNTIME = "mcp_runtime"
+    UNKNOWN = "unknown"
+
+
+SystemAreaSource = Literal["rule_based", "ai_classified", "unknown"]
 
 
 class Signal(BaseModel):
@@ -50,3 +83,14 @@ class TicketEnrichment(BaseModel):
     # observed signal. Kept visible so the demo can show what the system
     # deliberately declined to blame, rather than silently dropping them.
     uncorrelated_recent_changes: list[UncorrelatedChange]
+
+    # Taxonomy display field -- NEVER read by routing (services/router.py
+    # only ever looks at `domains`, above). Populated deterministically
+    # from `domains` when the rule engine found something; only falls
+    # back to an AI guess (services/ai_area_classifier.py, itself
+    # constrained to this same enum) when domains came back empty. Kept
+    # entirely separate from `domains` so an AI-sourced guess can never
+    # silently influence a routing decision -- see CLAUDE.md's "AI is not
+    # the policy engine".
+    system_areas: list[SystemArea] = Field(default_factory=lambda: [SystemArea.UNKNOWN])
+    system_area_source: SystemAreaSource = "unknown"
