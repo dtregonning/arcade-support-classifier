@@ -73,6 +73,10 @@ uv run pytest
 uv run support-demo data/hero_ticket.json
 ```
 
+For a full walkthrough — a badly-formed ticket, the hero scenario, a
+misleading customer hypothesis, and the Arcade/Slack/Linear flow — see
+[`DEMO.md`](DEMO.md).
+
 ## Web Portal
 
 A minimal web front end for submitting a ticket and seeing it run through

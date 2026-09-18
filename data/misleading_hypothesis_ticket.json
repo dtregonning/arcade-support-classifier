@@ -1,0 +1,32 @@
+{
+  "ticket_id": "TICK-90004",
+  "customer_id": "CUST-90004",
+  "customer_name": "Fairhaven Analytics",
+  "customer_tier": "enterprise",
+  "subject": "Your servers are down",
+  "description": "Customer reports total outage. Evidence shows an OAuth authorization failure, not a server outage.",
+  "reported_severity": "P1",
+  "affected_users": 12,
+  "total_users": 600,
+  "product": "AI Agent Platform",
+  "provider": "Google",
+  "environment": "production",
+  "error_messages": [
+    "HTTP 401 Unauthorized",
+    "error=invalid_scope"
+  ],
+  "logs": "tool=Drive.ListFiles status=401 error=invalid_scope required_scopes=[drive.readonly] granted_scopes=[]",
+  "reproduction_steps": [
+    "Call Drive.ListFiles",
+    "Observe HTTP 401 invalid_scope"
+  ],
+  "first_seen_at": "2026-09-16T08:00:00Z",
+  "reported_at": "2026-09-16T08:10:00Z",
+  "recent_changes": [
+    "Marketing site redesign launched"
+  ],
+  "customer_hypothesis": "Your servers are down",
+  "metadata": {
+    "scenario": "misleading_servers_down"
+  }
+}

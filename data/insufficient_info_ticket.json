@@ -1,0 +1,11 @@
+{
+  "ticket_id": "TICK-90003",
+  "customer_id": "CUST-90003",
+  "customer_name": "Unnamed Reporter",
+  "customer_tier": "free",
+  "subject": "Things are broken",
+  "description": "It's not working.",
+  "metadata": {
+    "scenario": "insufficient_information"
+  }
+}
