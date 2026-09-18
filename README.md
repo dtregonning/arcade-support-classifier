@@ -149,11 +149,40 @@ by the test suite, not just by hand.
 
 ## Arcade
 
-Once the custom tools are verified locally, Arcade can expose this server
-alongside operational toolkits (Slack, Linear) behind one MCP Gateway, so
-an agent can go straight from `support.recommend_actions` to
-`Linear.CreateIssue` or `Slack.PostMessage` — without this server ever
-holding a Slack or Linear API token itself.
+The server is deployed to Arcade Cloud (`arcade deploy --entrypoint
+src/support_automation/server.py`) and connected to Claude Code through a
+gateway bundling it with two operational tools:
+
+```bash
+arcade connect claude-code --server SupportAutomation \
+  --tool Linear.CreateIssue --tool Slack.SendMessage
+```
+
+This lets an agent go straight from `recommend_actions` to
+`Linear.CreateIssue` or `Slack.SendMessage` — without this server ever
+holding a Slack or Linear API token itself; Arcade handles that OAuth
+entirely. The demo flow this enables:
+
+```
+ticket → validate_ticket → enrich_ticket → route_ticket → recommend_actions
+       → Linear.CreateIssue (internal investigation issue)
+       → Slack.SendMessage (notify support engineering)
+```
+
+Both of those are internal-facing actions from `recommend_actions`'
+AUTO-tier action list — per the Automation Policy below, no customer-facing
+communication is ever sent automatically.
+
+A few things worth knowing if you redo this setup:
+- Arcade's toolkit catalog indexes a deployed server by a PascalCase
+  version of its `MCPApp(name=...)` (here, `SupportAutomation`), not the
+  literal server name shown by `arcade server list`.
+- `arcade connect --preset` isn't repeatable (a second `--preset` silently
+  replaces the first); use `--tool <Toolkit>.<ToolName>` for precise,
+  combinable control instead.
+- `arcade connect` always creates a new gateway and a new top-level
+  `mcpServers` entry in `~/.claude.json` rather than updating a previous
+  one — clean up stray entries by hand if you iterate on the setup.
 
 ## Safety Model
 
