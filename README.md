@@ -60,6 +60,7 @@ src/support_automation/
   services/         deterministic business logic (validator, enricher, severity, router, recommendations)
   tools/            thin wrappers around services — these become MCP tools
   webapp/           FastAPI web portal (form UI over the same services/tools)
+  server.py         MCP server (Arcade) exposing the 5 tools — uv run support-mcp
   cli.py            uv run support-demo <ticket.json>
 tests/
 ```
@@ -115,17 +116,36 @@ The system:
 
 ## MCP
 
-Five composable tools live in `src/support_automation/tools/`:
+Five composable tools live in `src/support_automation/tools/` and are
+exposed as MCP tools by `src/support_automation/server.py` via Arcade's
+MCP framework (`arcade-mcp-server`):
 
 - `generate_ticket` — deterministic, seeded mock ticket generator
 - `validate_ticket` — deterministic completeness/readiness checks
 - `enrich_ticket` — rule-based signal extraction (fact vs. claim vs. hypothesis)
 - `route_ticket` — policy-driven routing from `config/routing_rules.yaml`
-- `recommend_actions` — policy-gated action recommendations
+- `recommend_actions` — policy-gated action recommendations, plus the
+  independently assessed severity (there's no separate "assess severity"
+  tool — the client-orchestrated chain is exactly the 5 tools above)
 
 Each tool is a thin wrapper around a tested service function — no business
-logic lives in the MCP layer itself. Exposing them via Arcade's MCP
-framework is Phase 2 of this project.
+logic lives in `server.py`. The only real work it does is adapting to the
+MCP wire format: tickets cross the boundary as `TicketPayload`, identical
+to `SupportTicket` except timestamps are ISO-8601 strings rather than
+`datetime` objects, since Arcade's tool-schema builder doesn't support
+`datetime` as a wire type.
+
+Run the server locally:
+
+```bash
+uv run support-mcp stdio   # for Claude Desktop, CLI tools
+uv run support-mcp http    # for Cursor, VS Code, an Arcade Gateway, etc.
+```
+
+`uv run pytest` includes `tests/test_mcp_server.py`, which calls all five
+tools through `arcade_core`'s `ToolExecutor` — the same path Arcade's
+runtime uses — so schema generation and tool invocation are both verified
+by the test suite, not just by hand.
 
 ## Arcade
 

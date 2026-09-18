@@ -9,20 +9,18 @@ dependencies = [
     "pyyaml>=6.0",
     "fastapi>=0.110",
     "uvicorn>=0.27",
+    "arcade-mcp-server>=1.17.0,<2.0.0",
 ]
 
 [project.scripts]
 support-demo = "support_automation.cli:main"
 support-portal = "support_automation.webapp.app:main"
-
-[project.optional-dependencies]
-mcp = [
-    "arcade-mcp>=0.1.0",
-]
+support-mcp = "support_automation.server:main"
 
 [dependency-groups]
 dev = [
     "pytest>=8.0",
+    "pytest-asyncio>=0.23",
     "ruff>=0.6",
     "httpx>=0.27",
 ]
@@ -43,3 +41,4 @@ select = ["E", "F", "I", "UP", "B"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+asyncio_mode = "auto"
