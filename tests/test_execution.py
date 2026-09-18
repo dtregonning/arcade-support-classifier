@@ -180,3 +180,35 @@ def test_reports_failure_from_tool_execution(monkeypatch):
     linear_result = next(r for r in results if r.action == "create_linear_issue")
     assert linear_result.status == "failed"
     assert linear_result.detail == "team not found"
+
+
+def test_reports_failure_when_arcade_sdk_raises(monkeypatch):
+    """A bad ARCADE_API_KEY, or Arcade being unreachable, raises from
+    client.tools.execute() itself rather than returning success=False --
+    this must degrade to "failed", not crash the whole classify request."""
+    import httpx
+    from arcadepy import AuthenticationError
+
+    monkeypatch.setenv("LINEAR_TEAM", "DON")
+    monkeypatch.delenv("SLACK_CHANNEL", raising=False)
+    ticket, enrichment, severity, routing, recommendation = _hero_context()
+
+    class _RaisingTools(_FakeTools):
+        def execute(self, *, tool_name, input, user_id):
+            request = httpx.Request("POST", "https://api.arcade.dev/v1/tools/execute")
+            response = httpx.Response(401, request=request)
+            raise AuthenticationError(
+                message="Invalid API credentials", response=response, body=None
+            )
+
+    class _RaisingClient:
+        def __init__(self):
+            self.tools = _RaisingTools()
+
+    results = execute_auto_actions(
+        ticket, enrichment, severity, routing, recommendation, client=_RaisingClient()
+    )
+
+    linear_result = next(r for r in results if r.action == "create_linear_issue")
+    assert linear_result.status == "failed"
+    assert "Invalid API credentials" in linear_result.detail

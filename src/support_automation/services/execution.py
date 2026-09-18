@@ -146,7 +146,17 @@ class _ToolRun:
 
 
 def _run_tool(client: ArcadeToolClient, tool_name: str, user_id: str, input_: dict) -> _ToolRun:
-    response = client.tools.execute(tool_name=tool_name, input=input_, user_id=user_id)
+    from arcadepy import ArcadeError
+
+    try:
+        response = client.tools.execute(tool_name=tool_name, input=input_, user_id=user_id)
+    except ArcadeError as exc:
+        # A bad/expired ARCADE_API_KEY, a network blip, or Arcade being
+        # unreachable must degrade this one action to "failed", not crash
+        # the whole classify request -- classification has to keep working
+        # even when Arcade itself is misconfigured or down.
+        return _ToolRun(False, None, str(exc), None)
+
     output = response.output
     if response.success:
         value = output.value if output else None

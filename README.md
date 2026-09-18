@@ -137,6 +137,12 @@ The Linear issue is created first, and its URL is folded into the Slack
 message, mirroring the manual `Linear.CreateIssue` → `Slack.SendMessage`
 flow described below.
 
+### Hosting it publicly
+
+To share the portal as a link rather than running it locally, see
+[`DEPLOY.md`](DEPLOY.md) — a `Dockerfile` is included, along with steps
+to run it on AWS App Runner.
+
 The hero scenario: an enterprise customer (Acme) reports that a third
 of their users can't send Gmail, and their AI team suspects Arcade is
 losing OAuth tokens. Recent changes on file include an Okta certificate
