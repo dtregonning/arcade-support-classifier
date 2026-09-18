@@ -53,13 +53,44 @@ aws secretsmanager create-secret \
 identifiers, not credentials) — those can be plain App Runner environment
 variables.
 
-### 3. Create the App Runner service
+### 3. Create the two IAM roles App Runner needs
+
+App Runner uses **two separate roles**, not one:
+- an **access role**, used by the App Runner build/deploy machinery to
+  pull the image from your private ECR repo
+- an **instance role**, used by the *running container itself* to reach
+  other AWS services at runtime — required here because
+  `RuntimeEnvironmentSecrets` reads `ARCADE_API_KEY` from Secrets Manager
+
+```bash
+# Access role: lets App Runner pull the image from ECR
+aws iam create-role --role-name AppRunnerECRAccessRole \
+  --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"build.apprunner.amazonaws.com"},"Action":"sts:AssumeRole"}]}'
+aws iam attach-role-policy --role-name AppRunnerECRAccessRole \
+  --policy-arn arn:aws:iam::aws:policy/service-role/AWSAppRunnerServicePolicyForECRAccess
+
+# Instance role: lets the running container read the secret at startup
+aws iam create-role --role-name AppRunnerInstanceRole \
+  --assume-role-policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"tasks.apprunner.amazonaws.com"},"Action":"sts:AssumeRole"}]}'
+aws iam put-role-policy --role-name AppRunnerInstanceRole \
+  --policy-name AppRunnerSecretsAccess \
+  --policy-document '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Action":"secretsmanager:GetSecretValue","Resource":"arn:aws:secretsmanager:<region>:<account-id>:secret:support-automation/arcade-api-key-XXXXXX"}]}'
+```
+
+Note the ARNs each prints (or fetch them with `aws iam get-role
+--role-name <name> --query Role.Arn --output text`) — both are needed
+below. The `Resource` in the instance role's policy must match the exact
+secret ARN from step 2 (including its random suffix, e.g. `-XXXXXX`),
+which `aws secretsmanager create-secret` printed when you ran it.
+
+### 4. Create the App Runner service
 
 Console: **App Runner → Create service → Container registry → Amazon
 ECR**, pick the image just pushed, port `8000`. Under **Environment
 variables**, add `LINEAR_TEAM`, `SLACK_CHANNEL`, `ARCADE_USER_ID` as
 plain values; under **Environment secrets**, point `ARCADE_API_KEY` at
-the Secrets Manager secret from step 2.
+the Secrets Manager secret from step 2; under permissions, pick the two
+roles from step 3.
 
 Or via CLI:
 
@@ -78,11 +109,17 @@ aws apprunner create-service \
           "ARCADE_USER_ID": "<your identity, e.g. your email>"
         },
         "RuntimeEnvironmentSecrets": {
-          "ARCADE_API_KEY": "arn:aws:secretsmanager:<region>:<account-id>:secret:support-automation/arcade-api-key"
+          "ARCADE_API_KEY": "arn:aws:secretsmanager:<region>:<account-id>:secret:support-automation/arcade-api-key-XXXXXX"
         }
       }
     },
+    "AuthenticationConfiguration": {
+      "AccessRoleArn": "arn:aws:iam::<account-id>:role/AppRunnerECRAccessRole"
+    },
     "AutoDeploymentsEnabled": false
+  }' \
+  --instance-configuration '{
+    "InstanceRoleArn": "arn:aws:iam::<account-id>:role/AppRunnerInstanceRole"
   }'
 ```
 
