@@ -1,0 +1,33 @@
+# Deterministic completeness scoring for support tickets.
+#
+# Each field contributes `weight` points to the completeness score when
+# present. Weights must sum to 100. This file is documentation of the
+# scoring rules used by services/validator.py — the validator loads and
+# applies it directly, so editing weights here changes scoring behavior
+# without a code change.
+
+field_weights:
+  ticket_id: 5
+  customer_id: 5
+  customer_name: 5
+  customer_tier: 5
+  product: 10
+  environment: 5
+  description: 10
+  affected_users: 10
+  total_users: 5
+  first_seen_at: 10
+  reported_at: 5
+  evidence: 15 # satisfied by logs OR error_messages
+  recent_changes: 5
+  provider: 5
+
+thresholds:
+  valid_minimum_score: 50
+  ready_for_automation_minimum_score: 70
+
+# A ticket is considered to have an unsupported severity claim when the
+# reported severity implies broad impact but the affected/total user ratio
+# falls below this threshold.
+severity_support:
+  P1_minimum_impact_ratio: 0.5
